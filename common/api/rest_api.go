@@ -1,16 +1,20 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/jose-lico/log-processing-microservices/common/config"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/cors"
 )
+
+var Validate = validator.New()
 
 type RESTServer struct {
 	Router *chi.Mux
@@ -47,4 +51,10 @@ func (s *RESTServer) Run() error {
 	addr := ":" + s.cfg.Port
 	log.Printf("[TRACE] Starting API server on %s", addr)
 	return http.ListenAndServe(addr, s.Router)
+}
+
+func WriteJSON(w http.ResponseWriter, status int, v any) error {
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(status)
+	return json.NewEncoder(w).Encode(v)
 }

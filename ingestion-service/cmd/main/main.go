@@ -1,10 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"net/http"
 	"os"
+
+	"github.com/jose-lico/log-processing-microservices/ingestion-service/log_service"
 
 	"github.com/jose-lico/log-processing-microservices/common/api"
 	"github.com/jose-lico/log-processing-microservices/common/config"
@@ -25,9 +25,7 @@ func main() {
 	api := api.NewRESTServer(cfg)
 	api.UseDefaultMiddleware()
 
-	api.Router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello World!")
-	})
+	api.Router.Post("/", log_service.IngestLog)
 
 	err := api.Run()
 	if err != nil {
