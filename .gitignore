@@ -1,0 +1,8 @@
+# air files
+*/tmp
+
+# bin files
+*/bin
+
+# env files
+.env
