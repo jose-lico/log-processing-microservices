@@ -2,11 +2,15 @@ FROM golang:1.22 AS builder
 
 WORKDIR /app
 
-COPY . .
+COPY ./ingestion-service/go.mod ./ingestion-service/
+COPY ./common/go.mod ./common/go.sum ./common/
 
-RUN go mod download
+RUN cd ./ingestion-service && go mod download
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o bin/main ./cmd/main/
+COPY ./ingestion-service/ ./ingestion-service/
+COPY ./common/ ./common/
+
+RUN cd ./ingestion-service && CGO_ENABLED=0 GOOS=linux go build -o /app/bin/main ./cmd/main/
 
 FROM alpine:3.19
 RUN apk add --no-cache ca-certificates

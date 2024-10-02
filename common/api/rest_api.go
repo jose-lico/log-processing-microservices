@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"log"
 	"net/http"
 
@@ -39,6 +40,10 @@ func (s *RESTServer) UseDefaultMiddleware() {
 }
 
 func (s *RESTServer) Run() error {
+	if s.cfg.Port == "" {
+		return errors.New("no port provided")
+	}
+
 	addr := ":" + s.cfg.Port
 	log.Printf("[TRACE] Starting API server on %s", addr)
 	return http.ListenAndServe(addr, s.Router)
