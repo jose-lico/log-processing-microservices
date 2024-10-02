@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/jose-lico/log-processing-microservices/common/api"
+	"github.com/jose-lico/log-processing-microservices/ingestion-service/middleware"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -47,18 +48,17 @@ func IngestLog(w http.ResponseWriter, r *http.Request) {
 		for _, ve := range validationErrors {
 			errorMessages = append(errorMessages, ve.Field()+" is invalid.")
 		}
-		response, _ := json.Marshal(map[string]interface{}{
+
+		api.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
 			"status":  "error",
 			"message": "Validation failed.",
 			"errors":  errorMessages,
 		})
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(response)
 		return
 	}
 
 	// TODO: Process the log
+	middleware.Logger.Info("Processing Log file")
 
 	err = api.WriteJSON(w, http.StatusOK, map[string]string{
 		"status":  "success",
