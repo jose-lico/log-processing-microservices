@@ -39,7 +39,7 @@ type LogEntry struct {
 
 func init() {
 	sarama.Logger = log.New(os.Stdout, "[Sarama] ", log.LstdFlags)
-	brokers := []string{"localhost:9092"}
+	brokers := []string{"kafka-service:9092"}
 	var err error
 	kafkaProducer, err = createKafkaProducer(brokers)
 	if err != nil {
@@ -107,7 +107,7 @@ func IngestLog(w http.ResponseWriter, r *http.Request) {
 
 	topic := "logs"
 	if err := publishLog(kafkaProducer, topic, "This is a fake message"); err != nil {
-		api.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
+		api.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
 			"status":  "error",
 			"message": "Failed to publish log.",
 			"error":   err,
