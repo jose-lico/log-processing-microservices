@@ -1,4 +1,4 @@
-package log_service
+package ingest_log_service
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/jose-lico/log-processing-microservices/common/api"
-	"github.com/jose-lico/log-processing-microservices/ingestion-service/middleware"
+	"github.com/jose-lico/log-processing-microservices/common/logging"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -58,7 +58,7 @@ func IngestLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: Process the log
-	middleware.Logger.Info("Processing Log file")
+	logging.Logger.Info("Processing Log file")
 
 	err = api.WriteJSON(w, http.StatusOK, map[string]string{
 		"status":  "success",

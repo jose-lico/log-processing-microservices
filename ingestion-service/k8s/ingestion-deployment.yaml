@@ -15,7 +15,7 @@ spec:
       containers:
       - name: ingestion-container
         image: ingestion-service:local
-        imagePullPolicy: Never          
+        imagePullPolicy: Never
         ports:
         - containerPort: 8080
         env:

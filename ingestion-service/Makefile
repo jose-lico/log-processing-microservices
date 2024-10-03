@@ -14,7 +14,7 @@ build:
 	go build -o bin/main ./cmd/main
 
 # ================================
-#        Kubernetes
+#            Kubernetes  
 # ================================
 
 IMAGE_NAME=ingestion-service
@@ -31,6 +31,7 @@ k8s-deploy: docker-build
 	@echo "Deploying to Kubernetes..."
 	kubectl apply -f $(K8S_DEPLOYMENT_FILE)
 	kubectl apply -f $(K8S_SERVICE_FILE)
+	kubectl rollout restart deployment ingestion-deployment
 
 k8s-delete:
 	@echo "Deleting Kubernetes resources..."

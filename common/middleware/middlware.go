@@ -4,19 +4,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/jose-lico/log-processing-microservices/common/logging"
+
 	"go.uber.org/zap"
 )
-
-var Logger *zap.Logger
-
-func init() {
-	var err error
-	Logger, err = zap.NewDevelopment()
-	if err != nil {
-		panic(err)
-	}
-	defer Logger.Sync()
-}
 
 func LoggingMiddleware() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -28,7 +19,7 @@ func LoggingMiddleware() func(next http.Handler) http.Handler {
 
 			duration := time.Since(start)
 
-			Logger.Info("HTTP request received",
+			logging.Logger.Info("HTTP request received",
 				zap.String("method", r.Method),
 				zap.String("url", r.URL.String()),
 				zap.Int("status", ww.statusCode),
