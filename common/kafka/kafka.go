@@ -28,6 +28,19 @@ func CreateKafkaProducer(brokers []string) (sarama.SyncProducer, error) {
 	return producer, nil
 }
 
+func CreateKafkaConsumer(addrs []string, groupID string) (sarama.ConsumerGroup, error) {
+	config := sarama.NewConfig()
+	config.Consumer.Group.Rebalance.Strategy = sarama.NewBalanceStrategyRoundRobin()
+	config.Consumer.Offsets.Initial = sarama.OffsetOldest
+
+	consumerGroup, err := sarama.NewConsumerGroup(addrs, groupID, config)
+	if err != nil {
+		return nil, err
+	}
+
+	return consumerGroup, nil
+}
+
 type ZapSaramaLogger struct {
 	logger *zap.Logger
 }
