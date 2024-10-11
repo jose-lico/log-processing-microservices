@@ -1,4 +1,4 @@
-root = "."
+root = ".."
 testdata_dir = "testdata"
 tmp_dir = "tmp"
 
@@ -7,13 +7,13 @@ tmp_dir = "tmp"
   bin = "./tmp/main"
   cmd = "go build -o ./tmp/main ./cmd/main"
   delay = 1000
-  exclude_dir = ["assets", "tmp", "vendor", "testdata"]
+  exclude_dir = ["ingestion-service/tmp", "ingestion-service/bin"]
   exclude_file = []
   exclude_regex = ["_test.go"]
   exclude_unchanged = false
   follow_symlink = false
   full_bin = ""
-  include_dir = []
+  include_dir = ["ingestion-service", "common"]
   include_ext = ["go", "tpl", "tmpl", "html"]
   include_file = []
   kill_delay = "0s"
