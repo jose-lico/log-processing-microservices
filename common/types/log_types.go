@@ -1,4 +1,4 @@
-package ingest_log
+package log_types
 
 // Example log
 
@@ -13,10 +13,20 @@ package ingest_log
 // 	}
 // }
 
-type LogEntry struct {
+type IngestLogEntry struct {
 	Timestamp      string                 `json:"timestamp" validate:"required,datetime=2006-01-02T15:04:05Z07:00"`
 	Level          string                 `json:"level" validate:"required,oneof=INFO WARN ERROR DEBUG"`
 	Message        string                 `json:"message" validate:"required"`
 	UserID         string                 `json:"uesrId" validate:"omitempty,uuid4"`
 	AdditionalData map[string]interface{} `json:"additionalData" validate:"omitempty"`
+}
+
+type ProccessLogEntry struct {
+	Timestamp      string                 `json:"timestamp" validate:"required,datetime=2006-01-02T15:04:05Z07:00"`
+	Level          string                 `json:"level" validate:"required,oneof=INFO WARN ERROR DEBUG"`
+	Message        string                 `json:"message" validate:"required"`
+	UserID         string                 `json:"uesrId" validate:"omitempty,uuid4"`
+	AdditionalData map[string]interface{} `json:"additionalData" validate:"omitempty"`
+
+	Processed bool
 }

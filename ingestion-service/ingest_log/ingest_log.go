@@ -2,10 +2,12 @@ package ingest_log
 
 import (
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/jose-lico/log-processing-microservices/common/api"
 	"github.com/jose-lico/log-processing-microservices/common/logging"
+	log_types "github.com/jose-lico/log-processing-microservices/common/types"
 
 	"github.com/IBM/sarama"
 	"github.com/go-chi/chi/v5"
@@ -26,9 +28,16 @@ func (s *Service) RegisterRoutes(r chi.Router) {
 }
 
 func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
-	var logEntry LogEntry
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Unable to read request body", http.StatusBadRequest)
+		return
+	}
+	defer r.Body.Close()
 
-	err := json.NewDecoder(r.Body).Decode(&logEntry)
+	var logEntry log_types.IngestLogEntry
+
+	err = json.Unmarshal(bodyBytes, &logEntry)
 	if err != nil {
 		http.Error(w, "Invalid JSON format.", http.StatusBadRequest)
 		return
@@ -51,7 +60,7 @@ func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	topic := "logs"
-	if err := s.publishLog(topic, "This is a fake message"); err != nil {
+	if err := s.publishLog(topic, bodyBytes); err != nil {
 		api.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
 			"status":  "error",
 			"message": "Failed to publish log.",
@@ -70,10 +79,10 @@ func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Service) publishLog(topic string, message string) error {
+func (s *Service) publishLog(topic string, message []byte) error {
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
-		Value: sarama.StringEncoder(message),
+		Value: sarama.ByteEncoder(message),
 	}
 
 	partition, offset, err := s.kafkaProducer.SendMessage(msg)
@@ -83,7 +92,7 @@ func (s *Service) publishLog(topic string, message string) error {
 
 	logging.Logger.Info("Log message published",
 		zap.String("topic", topic),
-		zap.String("message", message),
+		zap.ByteString("message", message),
 		zap.Int32("partition", partition),
 		zap.Int64("offset", offset))
 	return nil

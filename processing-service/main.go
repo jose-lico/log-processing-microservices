@@ -2,16 +2,18 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 
-	"github.com/IBM/sarama"
 	"github.com/jose-lico/log-processing-microservices/common/envs"
 	"github.com/jose-lico/log-processing-microservices/common/kafka"
 	"github.com/jose-lico/log-processing-microservices/common/logging"
+	log_types "github.com/jose-lico/log-processing-microservices/common/types"
 
+	"github.com/IBM/sarama"
 	"go.uber.org/zap"
 )
 
@@ -70,8 +72,18 @@ func (c *Consumer) Cleanup(sarama.ConsumerGroupSession) error {
 
 func (c *Consumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for msg := range claim.Messages() {
-		log.Printf("Message claimed: value = %s, topic = %s, partition = %d, offset = %d",
-			string(msg.Value), msg.Topic, msg.Partition, msg.Offset)
+		logging.Logger.Info("Log Message claimed", zap.String("value", string(msg.Value)), zap.String("topic", msg.Topic), zap.Int32("partition", msg.Partition), zap.Int64("offset", msg.Offset))
+
+		var logEntry log_types.ProccessLogEntry
+
+		err := json.Unmarshal([]byte(msg.Value), &logEntry)
+		if err != nil {
+			logging.Logger.Error("Invalid JSON format", zap.Error(err))
+			return err
+		}
+
+		// Dummy business logic...
+		logEntry.Processed = true
 
 		sess.MarkMessage(msg, "")
 	}
