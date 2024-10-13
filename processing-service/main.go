@@ -7,15 +7,25 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/jose-lico/log-processing-microservices/common/envs"
 	"github.com/jose-lico/log-processing-microservices/common/kafka"
 	"github.com/jose-lico/log-processing-microservices/common/logging"
+	pb "github.com/jose-lico/log-processing-microservices/common/protos"
 	log_types "github.com/jose-lico/log-processing-microservices/common/types"
 
 	"github.com/IBM/sarama"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 )
+
+const (
+	address     = "localhost:50051"
+	defaultName = "World"
+)
+
+var client pb.GreeterClient
 
 func main() {
 	env := os.Getenv("ENV")
@@ -29,6 +39,13 @@ func main() {
 
 	logging.CreateLogger()
 	defer logging.Logger.Sync()
+
+	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		log.Fatalf("Could not connect: %v", err)
+	}
+	defer conn.Close()
+	client = pb.NewGreeterClient(conn)
 
 	kafkaHost := os.Getenv("KAFKA_HOST")
 	kafkaPort := os.Getenv("KAFKA_PORT")
@@ -84,6 +101,15 @@ func (c *Consumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sarama.C
 
 		// Dummy business logic...
 		logEntry.Processed = true
+
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+
+		r, err := client.SayHello(ctx, &pb.HelloRequest{Name: "gRPC"})
+		if err != nil {
+			log.Fatalf("Could not greet: %v", err)
+		}
+		log.Printf("Greeting: %s", r.GetMessage())
 
 		sess.MarkMessage(msg, "")
 	}
