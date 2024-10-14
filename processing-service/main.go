@@ -113,6 +113,7 @@ func (c *Consumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sarama.C
 			Message:        logEntry.Message,
 			UserId:         logEntry.UserID,
 			AdditionalData: logEntry.AdditionalData,
+			Processed:      logEntry.Processed,
 		}
 
 		response, err := client.SubmitLog(ctx, entry)

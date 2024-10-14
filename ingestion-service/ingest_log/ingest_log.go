@@ -2,6 +2,7 @@ package ingest_log
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -56,7 +57,7 @@ func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
 		validationErrors := err.(validator.ValidationErrors)
 		var errorMessages []string
 		for _, ve := range validationErrors {
-			errorMessages = append(errorMessages, ve.Field()+" is invalid.")
+			errorMessages = append(errorMessages, fmt.Sprintf("%s is invalid", ve.Field()))
 		}
 
 		api.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
