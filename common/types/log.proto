@@ -16,6 +16,7 @@ message ProcessLogEntry {
   string message = 3;
   string userId = 4;
   map<string, string> additionalData = 5;
+  bool processed = 6;
 }
 
 message LogResponse {
