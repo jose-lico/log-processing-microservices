@@ -20,15 +20,15 @@ import (
 func main() {
 	env := os.Getenv("ENV")
 
+	logging.CreateLogger(env)
+	defer logging.Logger.Sync()
+
 	if env == "LOCAL" {
 		err := envs.LoadEnvs()
 		if err != nil {
 			panic(err)
 		}
 	}
-
-	logging.CreateLogger()
-	defer logging.Logger.Sync()
 
 	kafkaHost := os.Getenv("KAFKA_HOST")
 	kafkaPort := os.Getenv("KAFKA_PORT")

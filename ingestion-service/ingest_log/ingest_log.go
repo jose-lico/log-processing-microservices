@@ -7,7 +7,7 @@ import (
 
 	"github.com/jose-lico/log-processing-microservices/common/api"
 	"github.com/jose-lico/log-processing-microservices/common/logging"
-	log_types "github.com/jose-lico/log-processing-microservices/common/types"
+	"github.com/jose-lico/log-processing-microservices/common/types"
 
 	"github.com/IBM/sarama"
 	"github.com/go-chi/chi/v5"
@@ -30,16 +30,24 @@ func (s *Service) RegisterRoutes(r chi.Router) {
 func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Unable to read request body", http.StatusBadRequest)
+		api.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
+			"status":  "error",
+			"message": "Unable to read request body",
+			"error":   err,
+		})
 		return
 	}
 	defer r.Body.Close()
 
-	var logEntry log_types.IngestLogEntry
+	var logEntry types.IngestLogEntry
 
 	err = json.Unmarshal(bodyBytes, &logEntry)
 	if err != nil {
-		http.Error(w, "Invalid JSON format.", http.StatusBadRequest)
+		api.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
+			"status":  "error",
+			"message": "Unable unmarshal data to JSON",
+			"error":   err,
+		})
 		return
 	}
 

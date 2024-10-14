@@ -12,8 +12,8 @@ QUERY_DIR=./query-service
 
 dev:
 	$(MAKE) -C $(INGESTION_DIR) dev &
-	$(MAKE) -C $(PROCESSING_DIR) dev
-#	$(MAKE) -C $(STORAGE_DIR) dev
+	$(MAKE) -C $(PROCESSING_DIR) dev &
+	$(MAKE) -C $(STORAGE_DIR) dev
 #	$(MAKE) -C $(QUERY_DIR) dev
 
 # ================================

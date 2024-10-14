@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"time"
@@ -13,22 +12,22 @@ import (
 	"github.com/jose-lico/log-processing-microservices/common/kafka"
 	"github.com/jose-lico/log-processing-microservices/common/logging"
 	pb "github.com/jose-lico/log-processing-microservices/common/protos"
+
 	log_types "github.com/jose-lico/log-processing-microservices/common/types"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/IBM/sarama"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
 )
 
-const (
-	address     = "localhost:50051"
-	defaultName = "World"
-)
-
-var client pb.GreeterClient
+var client pb.LogServiceClient
 
 func main() {
 	env := os.Getenv("ENV")
+
+	logging.CreateLogger(env)
+	defer logging.Logger.Sync()
 
 	if env == "LOCAL" {
 		err := envs.LoadEnvs()
@@ -37,15 +36,17 @@ func main() {
 		}
 	}
 
-	logging.CreateLogger()
-	defer logging.Logger.Sync()
+	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+	address := fmt.Sprintf("%s:%s", os.Getenv("STORAGE_HOST"), os.Getenv("STORAGE_PORT"))
+	conn, err := grpc.NewClient(address, opts...)
 	if err != nil {
-		log.Fatalf("Could not connect: %v", err)
+		logging.Logger.Fatal("Could not create gRPC client", zap.Error(err))
 	}
 	defer conn.Close()
-	client = pb.NewGreeterClient(conn)
+	logging.Logger.Info("Created gRPC Client")
+
+	client = pb.NewLogServiceClient(conn)
 
 	kafkaHost := os.Getenv("KAFKA_HOST")
 	kafkaPort := os.Getenv("KAFKA_PORT")
@@ -54,6 +55,7 @@ func main() {
 	if err != nil {
 		logging.Logger.Fatal("Failed to start Kafka producer", zap.Error(err))
 	}
+	logging.Logger.Info("Started kakfa producer")
 	defer consumerGroup.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -64,7 +66,7 @@ func main() {
 	go func() {
 		for {
 			if err := consumerGroup.Consume(ctx, []string{"logs"}, &consumer); err != nil {
-				log.Printf("Error from consumer: %v", err)
+				logging.Logger.Error("Error from consumer", zap.Error(err))
 			}
 			if ctx.Err() != nil {
 				return
@@ -74,7 +76,7 @@ func main() {
 
 	<-sigterm
 	cancel()
-	log.Println("Shutting down consumer...")
+	logging.Logger.Info("Shutting down consumer")
 }
 
 type Consumer struct{}
@@ -89,7 +91,7 @@ func (c *Consumer) Cleanup(sarama.ConsumerGroupSession) error {
 
 func (c *Consumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for msg := range claim.Messages() {
-		logging.Logger.Info("Log Message claimed", zap.String("value", string(msg.Value)), zap.String("topic", msg.Topic), zap.Int32("partition", msg.Partition), zap.Int64("offset", msg.Offset))
+		logging.Logger.Info("Log Message received", zap.String("value", string(msg.Value)), zap.String("topic", msg.Topic), zap.Int32("partition", msg.Partition), zap.Int64("offset", msg.Offset))
 
 		var logEntry log_types.ProccessLogEntry
 
@@ -105,13 +107,27 @@ func (c *Consumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sarama.C
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
-		r, err := client.SayHello(ctx, &pb.HelloRequest{Name: "gRPC"})
-		if err != nil {
-			log.Fatalf("Could not greet: %v", err)
+		entry := &pb.ProcessLogEntry{
+			Timestamp:      logEntry.Timestamp,
+			Level:          logEntry.Level,
+			Message:        logEntry.Message,
+			UserId:         logEntry.UserID,
+			AdditionalData: logEntry.AdditionalData,
 		}
-		log.Printf("Greeting: %s", r.GetMessage())
+
+		response, err := client.SubmitLog(ctx, entry)
+		if err != nil {
+			logging.Logger.Error("Error submitting log", zap.Error(err))
+			return err
+		}
+
+		logging.Logger.Info("Received storage response", zap.String("response", response.GetMessage()))
+
+		// Consume message regardless for now, handle status after store is done
 
 		sess.MarkMessage(msg, "")
+
+		logging.Logger.Info("Log Message consumed", zap.String("value", string(msg.Value)), zap.String("topic", msg.Topic), zap.Int32("partition", msg.Partition), zap.Int64("offset", msg.Offset))
 	}
 	return nil
 }

@@ -6,9 +6,15 @@ import (
 
 var Logger *zap.Logger
 
-func CreateLogger() {
+func CreateLogger(env string) {
 	var err error
-	Logger, err = zap.NewDevelopment()
+
+	if env == "LOCAL" {
+		Logger, err = zap.NewDevelopment()
+	} else {
+		Logger, err = zap.NewProduction()
+	}
+
 	if err != nil {
 		panic(err)
 	}

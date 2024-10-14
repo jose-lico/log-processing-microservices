@@ -2,17 +2,23 @@ syntax = "proto3";
 
 option go_package = "./protos";
 
-package greeter;
+package logservice;
 
-service Greeter {
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
+// protoc --go_out=. --go-grpc_out=. ./types/log.proto
+
+service LogService {
+  rpc SubmitLog (ProcessLogEntry) returns (LogResponse);
 }
 
-message HelloRequest {
-  string name = 1;
+message ProcessLogEntry {
+  string timestamp = 1;
+  string level = 2;
+  string message = 3;
+  string userId = 4;
+  map<string, string> additionalData = 5;
 }
 
-message HelloReply {
-  string message = 1;
+message LogResponse {
+  string status = 1;
+  string message = 2;
 }
-
