@@ -19,14 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	LogService_SubmitLog_FullMethodName = "/logservice.LogService/SubmitLog"
+	LogService_StoreLog_FullMethodName               = "/logservice.LogService/StoreLog"
+	LogService_RetrieveLogByID_FullMethodName        = "/logservice.LogService/RetrieveLogByID"
+	LogService_RetrieveLogByTimeframe_FullMethodName = "/logservice.LogService/RetrieveLogByTimeframe"
 )
 
 // LogServiceClient is the client API for LogService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LogServiceClient interface {
-	SubmitLog(ctx context.Context, in *ProcessLogEntry, opts ...grpc.CallOption) (*LogResponse, error)
+	StoreLog(ctx context.Context, in *StoreLogRequest, opts ...grpc.CallOption) (*StoreLogResponse, error)
+	RetrieveLogByID(ctx context.Context, in *RetrieveLogRequest, opts ...grpc.CallOption) (*RetrieveLogResponse, error)
+	RetrieveLogByTimeframe(ctx context.Context, in *RetrieveLogRequestTimeframe, opts ...grpc.CallOption) (*RetrieveLogResponse, error)
 }
 
 type logServiceClient struct {
@@ -37,10 +41,30 @@ func NewLogServiceClient(cc grpc.ClientConnInterface) LogServiceClient {
 	return &logServiceClient{cc}
 }
 
-func (c *logServiceClient) SubmitLog(ctx context.Context, in *ProcessLogEntry, opts ...grpc.CallOption) (*LogResponse, error) {
+func (c *logServiceClient) StoreLog(ctx context.Context, in *StoreLogRequest, opts ...grpc.CallOption) (*StoreLogResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(LogResponse)
-	err := c.cc.Invoke(ctx, LogService_SubmitLog_FullMethodName, in, out, cOpts...)
+	out := new(StoreLogResponse)
+	err := c.cc.Invoke(ctx, LogService_StoreLog_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *logServiceClient) RetrieveLogByID(ctx context.Context, in *RetrieveLogRequest, opts ...grpc.CallOption) (*RetrieveLogResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RetrieveLogResponse)
+	err := c.cc.Invoke(ctx, LogService_RetrieveLogByID_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *logServiceClient) RetrieveLogByTimeframe(ctx context.Context, in *RetrieveLogRequestTimeframe, opts ...grpc.CallOption) (*RetrieveLogResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RetrieveLogResponse)
+	err := c.cc.Invoke(ctx, LogService_RetrieveLogByTimeframe_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +75,9 @@ func (c *logServiceClient) SubmitLog(ctx context.Context, in *ProcessLogEntry, o
 // All implementations must embed UnimplementedLogServiceServer
 // for forward compatibility.
 type LogServiceServer interface {
-	SubmitLog(context.Context, *ProcessLogEntry) (*LogResponse, error)
+	StoreLog(context.Context, *StoreLogRequest) (*StoreLogResponse, error)
+	RetrieveLogByID(context.Context, *RetrieveLogRequest) (*RetrieveLogResponse, error)
+	RetrieveLogByTimeframe(context.Context, *RetrieveLogRequestTimeframe) (*RetrieveLogResponse, error)
 	mustEmbedUnimplementedLogServiceServer()
 }
 
@@ -62,8 +88,14 @@ type LogServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedLogServiceServer struct{}
 
-func (UnimplementedLogServiceServer) SubmitLog(context.Context, *ProcessLogEntry) (*LogResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SubmitLog not implemented")
+func (UnimplementedLogServiceServer) StoreLog(context.Context, *StoreLogRequest) (*StoreLogResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StoreLog not implemented")
+}
+func (UnimplementedLogServiceServer) RetrieveLogByID(context.Context, *RetrieveLogRequest) (*RetrieveLogResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RetrieveLogByID not implemented")
+}
+func (UnimplementedLogServiceServer) RetrieveLogByTimeframe(context.Context, *RetrieveLogRequestTimeframe) (*RetrieveLogResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RetrieveLogByTimeframe not implemented")
 }
 func (UnimplementedLogServiceServer) mustEmbedUnimplementedLogServiceServer() {}
 func (UnimplementedLogServiceServer) testEmbeddedByValue()                    {}
@@ -86,20 +118,56 @@ func RegisterLogServiceServer(s grpc.ServiceRegistrar, srv LogServiceServer) {
 	s.RegisterService(&LogService_ServiceDesc, srv)
 }
 
-func _LogService_SubmitLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ProcessLogEntry)
+func _LogService_StoreLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StoreLogRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LogServiceServer).SubmitLog(ctx, in)
+		return srv.(LogServiceServer).StoreLog(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: LogService_SubmitLog_FullMethodName,
+		FullMethod: LogService_StoreLog_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LogServiceServer).SubmitLog(ctx, req.(*ProcessLogEntry))
+		return srv.(LogServiceServer).StoreLog(ctx, req.(*StoreLogRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LogService_RetrieveLogByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetrieveLogRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LogServiceServer).RetrieveLogByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LogService_RetrieveLogByID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LogServiceServer).RetrieveLogByID(ctx, req.(*RetrieveLogRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LogService_RetrieveLogByTimeframe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetrieveLogRequestTimeframe)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LogServiceServer).RetrieveLogByTimeframe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LogService_RetrieveLogByTimeframe_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LogServiceServer).RetrieveLogByTimeframe(ctx, req.(*RetrieveLogRequestTimeframe))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -112,8 +180,16 @@ var LogService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*LogServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SubmitLog",
-			Handler:    _LogService_SubmitLog_Handler,
+			MethodName: "StoreLog",
+			Handler:    _LogService_StoreLog_Handler,
+		},
+		{
+			MethodName: "RetrieveLogByID",
+			Handler:    _LogService_RetrieveLogByID_Handler,
+		},
+		{
+			MethodName: "RetrieveLogByTimeframe",
+			Handler:    _LogService_RetrieveLogByTimeframe_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

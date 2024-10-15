@@ -7,10 +7,12 @@ package logservice;
 // protoc --go_out=. --go-grpc_out=. ./types/log.proto
 
 service LogService {
-  rpc SubmitLog (ProcessLogEntry) returns (LogResponse);
+  rpc StoreLog (StoreLogRequest) returns (StoreLogResponse);
+  rpc RetrieveLogByID (RetrieveLogRequest) returns (RetrieveLogResponse);
+  rpc RetrieveLogByTimeframe (RetrieveLogRequestTimeframe) returns (RetrieveLogResponse);
 }
 
-message ProcessLogEntry {
+message StoreLogRequest {
   string timestamp = 1;
   string level = 2;
   string message = 3;
@@ -19,7 +21,22 @@ message ProcessLogEntry {
   bool processed = 6;
 }
 
-message LogResponse {
+message StoreLogResponse {
   string status = 1;
   string message = 2;
+}
+
+message RetrieveLogRequest {
+  string id = 1;
+}
+
+message RetrieveLogRequestTimeframe {
+  string id = 1;
+  string timestampFrom = 2;
+  string timestampTo = 3;
+}
+
+message RetrieveLogResponse {
+  repeated StoreLogRequest entries = 1;
+  StoreLogResponse status = 2;
 }

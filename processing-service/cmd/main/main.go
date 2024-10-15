@@ -12,13 +12,12 @@ import (
 	"github.com/jose-lico/log-processing-microservices/common/kafka"
 	"github.com/jose-lico/log-processing-microservices/common/logging"
 	pb "github.com/jose-lico/log-processing-microservices/common/protos"
-
 	log_types "github.com/jose-lico/log-processing-microservices/common/types"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/IBM/sarama"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var client pb.LogServiceClient
@@ -107,7 +106,7 @@ func (c *Consumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sarama.C
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 		defer cancel()
 
-		entry := &pb.ProcessLogEntry{
+		entry := &pb.StoreLogRequest{
 			Timestamp:      logEntry.Timestamp,
 			Level:          logEntry.Level,
 			Message:        logEntry.Message,
@@ -116,7 +115,7 @@ func (c *Consumer) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sarama.C
 			Processed:      logEntry.Processed,
 		}
 
-		response, err := client.SubmitLog(ctx, entry)
+		response, err := client.StoreLog(ctx, entry)
 		if err != nil {
 			logging.Logger.Error("Error submitting log", zap.Error(err))
 			return err

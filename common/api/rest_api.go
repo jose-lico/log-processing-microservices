@@ -5,12 +5,12 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/jose-lico/log-processing-microservices/common/config"
 	"github.com/jose-lico/log-processing-microservices/common/logging"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-playground/validator/v10"
 	"github.com/rs/cors"
 	"go.uber.org/zap"
 )

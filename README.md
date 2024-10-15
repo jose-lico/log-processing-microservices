@@ -7,7 +7,7 @@ The project aims to simulate a real-world distributed system, providing hands-on
 
 The system is composed of the following services:
 
-- **Ingestion Service:** Receives logs via RESTful API from clients.
-- **Processing Service:** Consumes logs from Kafka, processes them (placeholder logic for now), and communicates with the Storage Service via gRPC.
-- **Storage Service:** Handles data persistence using PostgreSQL or Redis (still TBD).
+- **Ingestion Service:** Receives logs via RESTful API from clients and publishes to Kafka.
+- **Processing Service:** Consumes logs from Kafka, processes them (placeholder business logic for now), and communicates with the Storage Service via gRPC.
+- **Storage Service:** Handles data persistence using PostgreSQL.
 - **Query Service:** Provides a RESTful API for clients to retrieve logs, communicating with the Storage Service via gRPC.
