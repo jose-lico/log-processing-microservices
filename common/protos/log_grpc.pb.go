@@ -19,9 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	LogService_StoreLog_FullMethodName               = "/logservice.LogService/StoreLog"
-	LogService_RetrieveLogByID_FullMethodName        = "/logservice.LogService/RetrieveLogByID"
-	LogService_RetrieveLogByTimeframe_FullMethodName = "/logservice.LogService/RetrieveLogByTimeframe"
+	LogService_StoreLog_FullMethodName    = "/logservice.LogService/StoreLog"
+	LogService_RetrieveLog_FullMethodName = "/logservice.LogService/RetrieveLog"
 )
 
 // LogServiceClient is the client API for LogService service.
@@ -29,8 +28,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LogServiceClient interface {
 	StoreLog(ctx context.Context, in *StoreLogRequest, opts ...grpc.CallOption) (*StoreLogResponse, error)
-	RetrieveLogByID(ctx context.Context, in *RetrieveLogRequest, opts ...grpc.CallOption) (*RetrieveLogResponse, error)
-	RetrieveLogByTimeframe(ctx context.Context, in *RetrieveLogRequestTimeframe, opts ...grpc.CallOption) (*RetrieveLogResponse, error)
+	RetrieveLog(ctx context.Context, in *RetrieveLogRequest, opts ...grpc.CallOption) (*RetrieveLogResponse, error)
 }
 
 type logServiceClient struct {
@@ -51,20 +49,10 @@ func (c *logServiceClient) StoreLog(ctx context.Context, in *StoreLogRequest, op
 	return out, nil
 }
 
-func (c *logServiceClient) RetrieveLogByID(ctx context.Context, in *RetrieveLogRequest, opts ...grpc.CallOption) (*RetrieveLogResponse, error) {
+func (c *logServiceClient) RetrieveLog(ctx context.Context, in *RetrieveLogRequest, opts ...grpc.CallOption) (*RetrieveLogResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RetrieveLogResponse)
-	err := c.cc.Invoke(ctx, LogService_RetrieveLogByID_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *logServiceClient) RetrieveLogByTimeframe(ctx context.Context, in *RetrieveLogRequestTimeframe, opts ...grpc.CallOption) (*RetrieveLogResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RetrieveLogResponse)
-	err := c.cc.Invoke(ctx, LogService_RetrieveLogByTimeframe_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, LogService_RetrieveLog_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +64,7 @@ func (c *logServiceClient) RetrieveLogByTimeframe(ctx context.Context, in *Retri
 // for forward compatibility.
 type LogServiceServer interface {
 	StoreLog(context.Context, *StoreLogRequest) (*StoreLogResponse, error)
-	RetrieveLogByID(context.Context, *RetrieveLogRequest) (*RetrieveLogResponse, error)
-	RetrieveLogByTimeframe(context.Context, *RetrieveLogRequestTimeframe) (*RetrieveLogResponse, error)
+	RetrieveLog(context.Context, *RetrieveLogRequest) (*RetrieveLogResponse, error)
 	mustEmbedUnimplementedLogServiceServer()
 }
 
@@ -91,11 +78,8 @@ type UnimplementedLogServiceServer struct{}
 func (UnimplementedLogServiceServer) StoreLog(context.Context, *StoreLogRequest) (*StoreLogResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StoreLog not implemented")
 }
-func (UnimplementedLogServiceServer) RetrieveLogByID(context.Context, *RetrieveLogRequest) (*RetrieveLogResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RetrieveLogByID not implemented")
-}
-func (UnimplementedLogServiceServer) RetrieveLogByTimeframe(context.Context, *RetrieveLogRequestTimeframe) (*RetrieveLogResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RetrieveLogByTimeframe not implemented")
+func (UnimplementedLogServiceServer) RetrieveLog(context.Context, *RetrieveLogRequest) (*RetrieveLogResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RetrieveLog not implemented")
 }
 func (UnimplementedLogServiceServer) mustEmbedUnimplementedLogServiceServer() {}
 func (UnimplementedLogServiceServer) testEmbeddedByValue()                    {}
@@ -136,38 +120,20 @@ func _LogService_StoreLog_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
-func _LogService_RetrieveLogByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _LogService_RetrieveLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RetrieveLogRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LogServiceServer).RetrieveLogByID(ctx, in)
+		return srv.(LogServiceServer).RetrieveLog(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: LogService_RetrieveLogByID_FullMethodName,
+		FullMethod: LogService_RetrieveLog_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LogServiceServer).RetrieveLogByID(ctx, req.(*RetrieveLogRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _LogService_RetrieveLogByTimeframe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RetrieveLogRequestTimeframe)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(LogServiceServer).RetrieveLogByTimeframe(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: LogService_RetrieveLogByTimeframe_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LogServiceServer).RetrieveLogByTimeframe(ctx, req.(*RetrieveLogRequestTimeframe))
+		return srv.(LogServiceServer).RetrieveLog(ctx, req.(*RetrieveLogRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -184,12 +150,8 @@ var LogService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _LogService_StoreLog_Handler,
 		},
 		{
-			MethodName: "RetrieveLogByID",
-			Handler:    _LogService_RetrieveLogByID_Handler,
-		},
-		{
-			MethodName: "RetrieveLogByTimeframe",
-			Handler:    _LogService_RetrieveLogByTimeframe_Handler,
+			MethodName: "RetrieveLog",
+			Handler:    _LogService_RetrieveLog_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

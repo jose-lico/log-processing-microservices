@@ -8,8 +8,7 @@ package logservice;
 
 service LogService {
   rpc StoreLog (StoreLogRequest) returns (StoreLogResponse);
-  rpc RetrieveLogByID (RetrieveLogRequest) returns (RetrieveLogResponse);
-  rpc RetrieveLogByTimeframe (RetrieveLogRequestTimeframe) returns (RetrieveLogResponse);
+  rpc RetrieveLog (RetrieveLogRequest) returns (RetrieveLogResponse);
 }
 
 message StoreLogRequest {
@@ -27,10 +26,6 @@ message StoreLogResponse {
 }
 
 message RetrieveLogRequest {
-  string id = 1;
-}
-
-message RetrieveLogRequestTimeframe {
   string id = 1;
   string timestampFrom = 2;
   string timestampTo = 3;

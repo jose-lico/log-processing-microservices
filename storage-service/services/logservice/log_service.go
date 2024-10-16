@@ -1,4 +1,4 @@
-package storelog
+package logservice
 
 import (
 	"context"
@@ -38,22 +38,16 @@ func (s *Server) StoreLog(ctx context.Context, in *pb.StoreLogRequest) (*pb.Stor
 	return &pb.StoreLogResponse{Status: "Success", Message: "Log entry stored"}, nil
 }
 
-func (s *Server) RetrieveLogByID(ctx context.Context, in *pb.RetrieveLogRequest) (*pb.RetrieveLogResponse, error) {
+func (s *Server) RetrieveLog(ctx context.Context, in *pb.RetrieveLogRequest) (*pb.RetrieveLogResponse, error) {
 	logging.Logger.Info("Received logs request by id", zap.String("log", in.Id))
 
-	logs, err := s.retrieveLogFromDB(in.Id)
+	logs, err := s.retrieveLogFromDB(in.Id, in.TimestampFrom, in.TimestampTo)
 	fmt.Println(err)
 	if err != nil {
 		return &pb.RetrieveLogResponse{Entries: nil, Status: nil}, nil
 	}
 
 	return &pb.RetrieveLogResponse{Entries: logs, Status: nil}, nil
-}
-
-func (s *Server) RetrieveLogByTimeframe(ctx context.Context, in *pb.RetrieveLogRequestTimeframe) (*pb.RetrieveLogResponse, error) {
-	logging.Logger.Info("Received logs request by id and timeframe", zap.String("log", in.Id))
-
-	return &pb.RetrieveLogResponse{Entries: nil, Status: nil}, nil
 }
 
 func (s *Server) insertLogIntoDB(in *pb.StoreLogRequest) error {
@@ -74,8 +68,16 @@ func (s *Server) insertLogIntoDB(in *pb.StoreLogRequest) error {
 	return nil
 }
 
-func (s *Server) retrieveLogFromDB(id string) ([]*pb.StoreLogRequest, error) {
-	rows, err := s.db.Query("SELECT timestamp, level, message, user_id, additional_data, processed FROM process_log_entries WHERE user_id = $1", id)
+func (s *Server) retrieveLogFromDB(id, from, to string) ([]*pb.StoreLogRequest, error) {
+	var rows *sql.Rows
+	var err error
+
+	if from == "" {
+		rows, err = s.db.Query("SELECT timestamp, level, message, user_id, additional_data, processed FROM process_log_entries WHERE user_id = $1", id)
+	} else {
+		rows, err = s.db.Query("SELECT timestamp, level, message, user_id, additional_data, processed FROM process_log_entries WHERE user_id = $1 AND timestamp BETWEEN $2 AND $3", id, from, to)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("error querying log entries: %v", err)
 	}

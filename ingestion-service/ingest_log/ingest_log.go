@@ -34,7 +34,7 @@ func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
 		api.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
 			"status":  "error",
 			"message": "Unable to read request body",
-			"error":   err,
+			"error":   err.Error(),
 		})
 		return
 	}
@@ -47,7 +47,7 @@ func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
 		api.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
 			"status":  "error",
 			"message": "Unable unmarshal data to JSON",
-			"error":   err,
+			"error":   err.Error(),
 		})
 		return
 	}
@@ -73,7 +73,7 @@ func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
 		api.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
 			"status":  "error",
 			"message": "Failed to publish log.",
-			"error":   err,
+			"error":   err.Error(),
 		})
 		return
 	}

@@ -64,29 +64,50 @@ func main() {
 
 func getLogs(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
-	// from := r.PathValue("from")
-	// to := r.PathValue("to")
+	from := r.URL.Query().Get("from")
+	to := r.URL.Query().Get("to")
 
 	err := isValidUUID4(id)
 	if err != nil {
 		api.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
 			"status":  "error",
 			"message": "ID not valid",
-			"error":   err,
+			"error":   err.Error(),
 		})
 		return
 	}
-
-	// err := isValidTimestamps(from, to)
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
 
 	request := &pb.RetrieveLogRequest{
 		Id: id,
 	}
 
-	response, _ := client.RetrieveLogByID(ctx, request)
+	if from != "" || to != "" {
+		err = isValidTimestamps(from, to)
+		if err != nil {
+			api.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
+				"status":  "error",
+				"message": "Timestamps not valid",
+				"error":   err.Error(),
+			})
+			return
+		}
+
+		request.TimestampFrom = from
+		request.TimestampTo = to
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	response, err := client.RetrieveLog(ctx, request)
+	if err != nil {
+		api.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
+			"status":  "error",
+			"message": "could not retrieve logs from storage service",
+			"error":   err.Error(),
+		})
+		return
+	}
 
 	api.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
 		"status": "ok",
@@ -111,6 +132,28 @@ func isValidUUID4(id string) error {
 	}
 }
 
-// func isValidTimestamps(from, to string) error {
-// 	return nil
-// }
+func isValidTimestamps(from, to string) error {
+	if from == "" && to != "" {
+		return errors.New("missing from date")
+	} else if from != "" && to == "" {
+		return errors.New("missing to date")
+	}
+
+	layout := time.RFC3339
+
+	fromTime, err := time.Parse(layout, from)
+	if err != nil {
+		return fmt.Errorf("error parsing from: %v", err)
+	}
+
+	toTime, err := time.Parse(layout, to)
+	if err != nil {
+		return fmt.Errorf("error parsing to: %v", err)
+	}
+
+	if toTime.Before(fromTime) || toTime.Equal(fromTime) {
+		return errors.New("to time is after or same as from time, invalid timeframe")
+	}
+
+	return nil
+}
