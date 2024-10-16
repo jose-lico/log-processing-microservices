@@ -1,10 +1,17 @@
 .PHONY: dev run build docker-build k8s-deploy k8s-delete deploy
+
+IMAGE_NAME=ingestion-service
+IMAGE_TAG=local
+K8S_DIR=./k8s
+K8S_DEPLOYMENT_FILE=$(K8S_DIR)/ingestion-deployment.yaml
+K8S_SERVICE_FILE=$(K8S_DIR)/ingestion-service.yaml
+
 # ================================
 #          Go Commands
 # ================================
 
 dev:
-	@echo "Running with live reload..."
+	@echo "Running ingestion-service with live reload..."
 	ENV=LOCAL air
 
 run:
@@ -14,18 +21,16 @@ build:
 	go build -o bin/main ./cmd/main
 
 # ================================
-#            Kubernetes  
+#              Docker
 # ================================
-
-IMAGE_NAME=ingestion-service
-IMAGE_TAG=local
-K8S_DIR=./k8s
-K8S_DEPLOYMENT_FILE=$(K8S_DIR)/ingestion-deployment.yaml
-K8S_SERVICE_FILE=$(K8S_DIR)/ingestion-service.yaml
 
 docker-build:
 	@echo "Building Docker image..."
 	cd .. && docker build -t $(IMAGE_NAME):$(IMAGE_TAG) -f ./ingestion-service/Dockerfile .
+
+# ================================
+#            Kubernetes  
+# ================================
 
 k8s-deploy: docker-build
 	@echo "Deploying to Kubernetes..."

@@ -1,12 +1,27 @@
-.PHONY: k8s-deploy k8s-delete
-# ================================
-#            Kubernetes  
-# ================================
+.PHONY: up down k8s-deploy k8s-delete
 
 KAFKA_SERVICE_FILE=kafka-service.yml
 KAFKA_DEPLOYMENT_FILE=kafka-deployment.yml
 ZOOKEEPER_SERVICE_FILE=zookeeper-service.yml
 ZOOKEEPER_DEPLOYMENT_FILE=zookeeper-deployment.yml
+
+# ================================
+#              Docker
+# ================================
+
+up:
+	@echo "Spinning up kafka and zookeeper with docker-compose"
+	docker-compose down
+	docker-compose build
+	docker-compose up -d
+
+down:
+	@echo "Spinning down services"
+	docker-compose down
+
+# ================================
+#            Kubernetes  
+# ================================
 
 k8s-deploy:
 	@echo "Deploying Kafka to Kubernetes..."

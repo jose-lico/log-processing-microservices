@@ -1,7 +1,9 @@
 package ingest_log
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,6 +31,8 @@ func (s *Service) RegisterRoutes(r chi.Router) {
 }
 
 func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
+	// ctx := r.Context()
+
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		api.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
@@ -69,7 +73,19 @@ func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	topic := "logs"
-	if err := s.publishLog(topic, bodyBytes); err != nil {
+	if err := s.publishLog(r.Context(), topic, bodyBytes); err != nil {
+		if errors.Is(err, context.Canceled) {
+			logging.Logger.Info("Publish log canceled due to context cancellation")
+
+			api.WriteJSON(w, http.StatusRequestTimeout, map[string]interface{}{
+				"status":  "error",
+				"message": "Failed to publish log.",
+				"error":   "Request canceled by client or server shutdown",
+			})
+			return
+		}
+
+		logging.Logger.Error("Failed to publish log", zap.Error(err))
 		api.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
 			"status":  "error",
 			"message": "Failed to publish log.",
@@ -88,10 +104,17 @@ func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Service) publishLog(topic string, message []byte) error {
+func (s *Service) publishLog(ctx context.Context, topic string, message []byte) error {
 	msg := &sarama.ProducerMessage{
 		Topic: topic,
 		Value: sarama.ByteEncoder(message),
+	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		// Proceed with sending the message
 	}
 
 	partition, offset, err := s.kafkaProducer.SendMessage(msg)

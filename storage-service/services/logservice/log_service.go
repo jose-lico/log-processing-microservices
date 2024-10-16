@@ -42,7 +42,7 @@ func (s *Server) RetrieveLog(ctx context.Context, in *pb.RetrieveLogRequest) (*p
 	logging.Logger.Info("Received logs request by id", zap.String("log", in.Id))
 
 	logs, err := s.retrieveLogFromDB(in.Id, in.TimestampFrom, in.TimestampTo)
-	fmt.Println(err)
+
 	if err != nil {
 		return &pb.RetrieveLogResponse{Entries: nil, Status: nil}, nil
 	}
