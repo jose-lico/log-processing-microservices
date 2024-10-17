@@ -8,7 +8,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jose-lico/log-processing-microservices/common/api"
 	"github.com/jose-lico/log-processing-microservices/common/config"
 	"github.com/jose-lico/log-processing-microservices/common/envs"
@@ -17,6 +16,7 @@ import (
 	pb "github.com/jose-lico/log-processing-microservices/common/protos"
 
 	chi_middleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

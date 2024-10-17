@@ -31,8 +31,6 @@ func (s *Service) RegisterRoutes(r chi.Router) {
 }
 
 func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
-	// ctx := r.Context()
-
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		api.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
@@ -114,7 +112,6 @@ func (s *Service) publishLog(ctx context.Context, topic string, message []byte) 
 	case <-ctx.Done():
 		return ctx.Err()
 	default:
-		// Proceed with sending the message
 	}
 
 	partition, offset, err := s.kafkaProducer.SendMessage(msg)
