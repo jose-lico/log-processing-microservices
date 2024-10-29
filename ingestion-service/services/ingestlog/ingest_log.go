@@ -18,10 +18,10 @@ import (
 )
 
 type Service struct {
-	kafkaProducer *kafka.Async
+	kafkaProducer *kafka.AsyncProducer
 }
 
-func NewService(p *kafka.Async) *Service {
+func NewService(p *kafka.AsyncProducer) *Service {
 	return &Service{kafkaProducer: p}
 }
 

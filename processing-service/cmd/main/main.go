@@ -27,7 +27,7 @@ func main() {
 	if env == "LOCAL" {
 		err := envs.LoadEnvs()
 		if err != nil {
-			panic(err)
+			logging.Logger.Fatal("Failed to load envs", zap.Error(err))
 		}
 	}
 
@@ -35,7 +35,6 @@ func main() {
 	storagePort := os.Getenv("STORAGE_PORT")
 	kafkaHost := os.Getenv("KAFKA_HOST")
 	kafkaPort := os.Getenv("KAFKA_PORT")
-
 	if storageHost == "" || storagePort == "" || kafkaHost == "" || kafkaPort == "" {
 		logging.Logger.Fatal("STORAGE_HOST, STORAGE_PORT and KAFKA_HOST, KAFKA_PORT must be set",
 			zap.String("STORAGE_HOST", storageHost), zap.String("STORAGE_PORT", storagePort),

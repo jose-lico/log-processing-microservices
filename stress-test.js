@@ -35,7 +35,7 @@ export default function () {
   let res = http.post(url, payload, { headers: headers });
 
   check(res, {
-    "status is 200": (r) => r.status === 200,
+    "status is 202": (r) => r.status === 202,
     "response time < 200ms": (r) => r.timings.duration < 200, // Check for response time
   });
 }

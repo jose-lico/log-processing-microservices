@@ -17,12 +17,12 @@ const (
 	reconnectCooldown = 3
 )
 
-type Async struct {
+type AsyncProducer struct {
 	Producer sarama.AsyncProducer
 	wg       sync.WaitGroup
 }
 
-func NewAsyncProducer(ctx context.Context, id string, brokers []string) (*Async, error) {
+func NewAsyncProducer(ctx context.Context, id string, brokers []string) (*AsyncProducer, error) {
 	saramaLogger := &ZapSaramaLogger{
 		logger: logging.Logger,
 	}
@@ -56,7 +56,7 @@ func NewAsyncProducer(ctx context.Context, id string, brokers []string) (*Async,
 				continue
 			}
 
-			kp := &Async{
+			kp := &AsyncProducer{
 				Producer: producer,
 			}
 
@@ -78,13 +78,13 @@ func NewAsyncProducer(ctx context.Context, id string, brokers []string) (*Async,
 	return nil, err
 }
 
-func (kp *Async) Close() {
+func (kp *AsyncProducer) Close() {
 	kp.Producer.AsyncClose()
 	kp.wg.Wait()
 	logging.Logger.Info("Kafka producer closed")
 }
 
-func (kp *Async) handleSuccess() {
+func (kp *AsyncProducer) handleSuccess() {
 	defer kp.wg.Done()
 	for msg := range kp.Producer.Successes() {
 		logging.Logger.Info("Message sent successfully",
@@ -94,7 +94,7 @@ func (kp *Async) handleSuccess() {
 	}
 }
 
-func (kp *Async) handleError() {
+func (kp *AsyncProducer) handleError() {
 	defer kp.wg.Done()
 	for err := range kp.Producer.Errors() {
 		logging.Logger.Error("Failed to produce message", zap.Error(err))
