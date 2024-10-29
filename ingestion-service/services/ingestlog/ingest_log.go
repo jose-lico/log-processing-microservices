@@ -1,14 +1,13 @@
-package ingest_log
+package ingestlog
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/jose-lico/log-processing-microservices/common/api"
+	"github.com/jose-lico/log-processing-microservices/common/kafka"
 	"github.com/jose-lico/log-processing-microservices/common/logging"
 	"github.com/jose-lico/log-processing-microservices/common/types"
 
@@ -19,15 +18,15 @@ import (
 )
 
 type Service struct {
-	kafkaProducer sarama.SyncProducer
+	kafkaProducer *kafka.Async
 }
 
-func NewService(p sarama.SyncProducer) *Service {
+func NewService(p *kafka.Async) *Service {
 	return &Service{kafkaProducer: p}
 }
 
 func (s *Service) RegisterRoutes(r chi.Router) {
-	r.Post("/", s.ingestLog)
+	r.Post("/async", s.ingestLog)
 }
 
 func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
@@ -70,29 +69,14 @@ func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	topic := "logs"
-	if err := s.publishLog(r.Context(), topic, bodyBytes); err != nil {
-		if errors.Is(err, context.Canceled) {
-			logging.Logger.Info("Publish log canceled due to context cancellation")
-
-			api.WriteJSON(w, http.StatusRequestTimeout, map[string]interface{}{
-				"status":  "error",
-				"message": "Failed to publish log.",
-				"error":   "Request canceled by client or server shutdown",
-			})
-			return
-		}
-
-		logging.Logger.Error("Failed to publish log", zap.Error(err))
-		api.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
-			"status":  "error",
-			"message": "Failed to publish log.",
-			"error":   err.Error(),
-		})
-		return
+	msg := &sarama.ProducerMessage{
+		Topic: "logs",
+		Value: sarama.ByteEncoder(bodyBytes),
 	}
 
-	err = api.WriteJSON(w, http.StatusOK, map[string]string{
+	s.kafkaProducer.Producer.Input() <- msg
+
+	err = api.WriteJSON(w, http.StatusAccepted, map[string]string{
 		"status":  "success",
 		"message": "Log received successfully.",
 	})
@@ -100,29 +84,4 @@ func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logging.Logger.Error("Error writing JSON Response to client", zap.Error(err))
 	}
-}
-
-func (s *Service) publishLog(ctx context.Context, topic string, message []byte) error {
-	msg := &sarama.ProducerMessage{
-		Topic: topic,
-		Value: sarama.ByteEncoder(message),
-	}
-
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-
-	partition, offset, err := s.kafkaProducer.SendMessage(msg)
-	if err != nil {
-		return err
-	}
-
-	logging.Logger.Info("Log message published",
-		zap.String("topic", topic),
-		zap.ByteString("message", message),
-		zap.Int32("partition", partition),
-		zap.Int64("offset", offset))
-	return nil
 }

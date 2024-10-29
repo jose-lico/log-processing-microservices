@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/jose-lico/log-processing-microservices/ingestion-service/ingest_log"
+	"github.com/jose-lico/log-processing-microservices/ingestion-service/services/ingestlog"
 
 	"github.com/jose-lico/log-processing-microservices/common/api"
 	"github.com/jose-lico/log-processing-microservices/common/config"
@@ -47,30 +47,29 @@ func main() {
 	kafkaHost := os.Getenv("KAFKA_HOST")
 	kafkaPort := os.Getenv("KAFKA_PORT")
 	if kafkaHost == "" || kafkaPort == "" {
-		logging.Logger.Fatal("KAFKA_HOST and KAFKA_PORT must be set")
+		logging.Logger.Fatal("KAFKA_HOST and KAFKA_PORT must be set",
+			zap.String("KAFKA_HOST", kafkaHost),
+			zap.String("KAFKA_PORT", kafkaPort))
 	}
-	producer, err := kafka.CreateKafkaProducer(ctx, []string{fmt.Sprintf("%s:%s", kafkaHost, kafkaPort)})
+	producer, err := kafka.NewAsyncProducer(ctx, "ingestion-service", []string{fmt.Sprintf("%s:%s", kafkaHost, kafkaPort)})
 	if err != nil {
 		logging.Logger.Fatal("Failed to create Kafka producer", zap.Error(err))
 	}
-	defer func() {
-		if err := producer.Close(); err != nil {
-			logging.Logger.Error("Failed to close Kafka producer", zap.Error(err))
-		}
-	}()
 
 	cfg := config.NewRESTConfig()
-	api := api.NewRESTServer(cfg)
+	api := api.NewRESTServer()
 	api.Router.Use(middleware.LoggingMiddleware())
 	api.Router.Use(chi_middleware.Recoverer)
 
-	ingestLogService := ingest_log.NewService(producer)
+	ingestLogService := ingestlog.NewService(producer)
 	ingestLogService.RegisterRoutes(api.Router)
 
-	err = api.Run(ctx)
-	if err != nil && !errors.Is(err, context.Canceled) {
-		logging.Logger.Fatal("Error running REST server", zap.Error(err))
+	err = api.Run(ctx, cfg)
+	if err != nil && !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
+		logging.Logger.Error("Error running REST server", zap.Error(err))
 	}
 
-	logging.Logger.Info("Ingestion Service has shut down")
+	producer.Close()
+
+	logging.Logger.Info("Ingestion Service has shutdown")
 }

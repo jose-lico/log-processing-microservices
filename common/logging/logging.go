@@ -8,11 +8,15 @@ var Logger *zap.Logger
 
 func CreateLogger(env string) {
 	var err error
+	var cfg zap.Config
 
 	if env == "LOCAL" {
-		Logger, err = zap.NewDevelopment()
+		cfg = zap.NewDevelopmentConfig()
+		cfg.EncoderConfig.StacktraceKey = ""
+		Logger, err = cfg.Build()
 	} else {
-		Logger, err = zap.NewProduction()
+		cfg = zap.NewProductionConfig()
+		Logger, err = cfg.Build()
 	}
 
 	if err != nil {

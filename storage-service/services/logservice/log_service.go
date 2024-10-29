@@ -13,20 +13,18 @@ import (
 	"google.golang.org/grpc"
 )
 
-type Server struct {
+type server struct {
 	pb.UnimplementedLogServiceServer
 	db *sql.DB
 }
 
-func NewServer(gRPC *grpc.Server, db *sql.DB) *Server {
-	server := &Server{db: db}
+func NewServer(gRPC *grpc.Server, db *sql.DB) {
+	server := &server{db: db}
 
 	pb.RegisterLogServiceServer(gRPC, server)
-
-	return server
 }
 
-func (s *Server) StoreLog(ctx context.Context, in *pb.StoreLogRequest) (*pb.StoreLogResponse, error) {
+func (s *server) StoreLog(ctx context.Context, in *pb.StoreLogRequest) (*pb.StoreLogResponse, error) {
 	logging.Logger.Info("Received log entry", zap.Any("log", in))
 
 	err := s.insertLogIntoDB(in)
@@ -38,7 +36,7 @@ func (s *Server) StoreLog(ctx context.Context, in *pb.StoreLogRequest) (*pb.Stor
 	return &pb.StoreLogResponse{Status: "Success", Message: "Log entry stored"}, nil
 }
 
-func (s *Server) RetrieveLog(ctx context.Context, in *pb.RetrieveLogRequest) (*pb.RetrieveLogResponse, error) {
+func (s *server) RetrieveLog(ctx context.Context, in *pb.RetrieveLogRequest) (*pb.RetrieveLogResponse, error) {
 	logging.Logger.Info("Received logs request by id", zap.String("log", in.Id))
 
 	logs, err := s.retrieveLogFromDB(in.Id, in.TimestampFrom, in.TimestampTo)
@@ -50,7 +48,7 @@ func (s *Server) RetrieveLog(ctx context.Context, in *pb.RetrieveLogRequest) (*p
 	return &pb.RetrieveLogResponse{Entries: logs, Status: nil}, nil
 }
 
-func (s *Server) insertLogIntoDB(in *pb.StoreLogRequest) error {
+func (s *server) insertLogIntoDB(in *pb.StoreLogRequest) error {
 	additionalDataJSON, err := json.Marshal(in.AdditionalData)
 	if err != nil {
 		return fmt.Errorf("error marshaling additional data: %v", err)
@@ -68,7 +66,7 @@ func (s *Server) insertLogIntoDB(in *pb.StoreLogRequest) error {
 	return nil
 }
 
-func (s *Server) retrieveLogFromDB(id, from, to string) ([]*pb.StoreLogRequest, error) {
+func (s *server) retrieveLogFromDB(id, from, to string) ([]*pb.StoreLogRequest, error) {
 	var rows *sql.Rows
 	var err error
 

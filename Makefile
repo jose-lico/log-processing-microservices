@@ -20,6 +20,10 @@ dev:
 	$(MAKE) -C $(QUERY_DIR) dev; \
 	wait
 
+test:
+	@echo "Stress testing with k6"
+	k6 run stress-test.js
+
 # ================================
 #              Docker
 # ================================

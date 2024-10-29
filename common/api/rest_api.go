@@ -21,21 +21,20 @@ var Validate = validator.New()
 
 type RESTServer struct {
 	Router *chi.Mux
-	cfg    *config.RESTConfig
 }
 
-func NewRESTServer(cfg *config.RESTConfig) *RESTServer {
-	return &RESTServer{Router: chi.NewRouter(), cfg: cfg}
+func NewRESTServer() *RESTServer {
+	return &RESTServer{Router: chi.NewRouter()}
 }
 
-func (s *RESTServer) UseDefaultMiddleware() {
+func (s *RESTServer) UseDefaultMiddleware(cfg *config.RESTConfig) {
 	cors := cors.New(cors.Options{
-		AllowedOrigins:   s.cfg.AllowedOrigins,
-		AllowedMethods:   s.cfg.AllowedMethods,
-		AllowedHeaders:   s.cfg.AllowedHeaders,
-		ExposedHeaders:   s.cfg.AllowedHeaders,
-		AllowCredentials: s.cfg.AllowCredentials,
-		MaxAge:           s.cfg.MaxAge,
+		AllowedOrigins:   cfg.AllowedOrigins,
+		AllowedMethods:   cfg.AllowedMethods,
+		AllowedHeaders:   cfg.AllowedHeaders,
+		ExposedHeaders:   cfg.AllowedHeaders,
+		AllowCredentials: cfg.AllowCredentials,
+		MaxAge:           cfg.MaxAge,
 	})
 
 	s.Router.Use(cors.Handler)
@@ -46,12 +45,12 @@ func (s *RESTServer) UseDefaultMiddleware() {
 	s.Router.Use(middleware.Recoverer)
 }
 
-func (s *RESTServer) Run(ctx context.Context) error {
-	if s.cfg.Port == "" {
+func (s *RESTServer) Run(ctx context.Context, cfg *config.RESTConfig) error {
+	if cfg.Port == "" {
 		return errors.New("no port provided")
 	}
 
-	addr := ":" + s.cfg.Port
+	addr := ":" + cfg.Port
 
 	srv := &http.Server{
 		Addr:    addr,

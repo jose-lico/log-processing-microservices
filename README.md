@@ -1,7 +1,7 @@
 This project is my attempt at developing a more advanced Go backend application, designed to demonstrate a microservices architecture for log processing.
 
 The system consists of four containerized microservices orchestrated using Kubernetes, utilizing technologies like gRPC, Kafka, and RESTful APIs.
-The project aims to simulate a real-world distributed system, providing hands-on experience with interservice communication, container orchestration, authentication, and monitoring.
+It aims to simulate a real-world distributed system, providing hands-on experience with interservice communication, container orchestration, and monitoring.
 
 ## Architecture
 

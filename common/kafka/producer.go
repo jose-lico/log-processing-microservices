@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/jose-lico/log-processing-microservices/common/logging"
@@ -16,28 +17,34 @@ const (
 	reconnectCooldown = 3
 )
 
-func CreateKafkaProducer(ctx context.Context, brokers []string) (sarama.SyncProducer, error) {
+type Async struct {
+	Producer sarama.AsyncProducer
+	wg       sync.WaitGroup
+}
+
+func NewAsyncProducer(ctx context.Context, id string, brokers []string) (*Async, error) {
 	saramaLogger := &ZapSaramaLogger{
 		logger: logging.Logger,
 	}
 	sarama.Logger = saramaLogger
 
 	config := sarama.NewConfig()
-	config.ClientID = "ingestion-service"
+	config.ClientID = id
 	config.Producer.Return.Successes = true
+	config.Producer.Return.Errors = true
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 5
 
-	var producer sarama.SyncProducer
 	var err error
 
 	for attempts := 1; attempts <= maxRetries; attempts++ {
 		select {
 		case <-ctx.Done():
 			logging.Logger.Info("Kafka producer creation canceled")
+
 			return nil, ctx.Err()
 		default:
-			producer, err = sarama.NewSyncProducer(brokers, config)
+			producer, err := sarama.NewAsyncProducer(brokers, config)
 			if err != nil {
 				logging.Logger.Warn(
 					fmt.Sprintf("Failed to create Kafka producer (attempt %d/%d)", attempts, maxRetries),
@@ -48,8 +55,18 @@ func CreateKafkaProducer(ctx context.Context, brokers []string) (sarama.SyncProd
 				}
 				continue
 			}
-			logging.Logger.Info("Kafka producer created successfully")
-			return producer, nil
+
+			kp := &Async{
+				Producer: producer,
+			}
+
+			kp.wg.Add(2)
+			go kp.handleSuccess()
+			go kp.handleError()
+
+			logging.Logger.Info("Kafka producer created successfully", zap.String("id", id))
+
+			return kp, nil
 		}
 	}
 
@@ -61,31 +78,25 @@ func CreateKafkaProducer(ctx context.Context, brokers []string) (sarama.SyncProd
 	return nil, err
 }
 
-func CreateKafkaConsumer(addrs []string, groupID string) (sarama.ConsumerGroup, error) {
-	config := sarama.NewConfig()
-	config.Consumer.Group.Rebalance.Strategy = sarama.NewBalanceStrategyRoundRobin()
-	config.Consumer.Offsets.Initial = sarama.OffsetOldest
+func (kp *Async) Close() {
+	kp.Producer.AsyncClose()
+	kp.wg.Wait()
+	logging.Logger.Info("Kafka producer closed")
+}
 
-	consumerGroup, err := sarama.NewConsumerGroup(addrs, groupID, config)
-	if err != nil {
-		return nil, err
+func (kp *Async) handleSuccess() {
+	defer kp.wg.Done()
+	for msg := range kp.Producer.Successes() {
+		logging.Logger.Info("Message sent successfully",
+			zap.String("topic", msg.Topic),
+			zap.Int32("partition", msg.Partition),
+			zap.Int64("offset", msg.Offset))
 	}
-
-	return consumerGroup, nil
 }
 
-type ZapSaramaLogger struct {
-	logger *zap.Logger
-}
-
-func (l *ZapSaramaLogger) Print(v ...interface{}) {
-	l.logger.Info(fmt.Sprint(v...))
-}
-
-func (l *ZapSaramaLogger) Printf(format string, v ...interface{}) {
-	l.logger.Info(fmt.Sprintf(format, v...))
-}
-
-func (l *ZapSaramaLogger) Println(v ...interface{}) {
-	l.logger.Info(fmt.Sprintln(v...))
+func (kp *Async) handleError() {
+	defer kp.wg.Done()
+	for err := range kp.Producer.Errors() {
+		logging.Logger.Error("Failed to produce message", zap.Error(err))
+	}
 }
