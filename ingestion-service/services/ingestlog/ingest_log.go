@@ -30,6 +30,14 @@ func (s *Service) RegisterRoutes(r chi.Router) {
 }
 
 func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
+	if r.Body == nil {
+		api.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
+			"status":  "error",
+			"message": "Empty request body",
+		})
+		return
+	}
+
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		api.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
@@ -45,7 +53,7 @@ func (s *Service) ingestLog(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(bodyBytes, &logEntry)
 	if err != nil {
-		api.WriteJSON(w, http.StatusInternalServerError, map[string]interface{}{
+		api.WriteJSON(w, http.StatusBadRequest, map[string]interface{}{
 			"status":  "error",
 			"message": "Unable unmarshal data to JSON",
 			"error":   err.Error(),

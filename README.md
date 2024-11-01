@@ -11,3 +11,7 @@ The system is composed of the following services:
 - **Processing Service:** Consumes logs from Kafka, processes them (placeholder business logic for now), and communicates with the Storage Service via gRPC.
 - **Storage Service:** Handles data persistence using PostgreSQL.
 - **Query Service:** Provides a RESTful API for clients to retrieve logs, communicating with the Storage Service via gRPC.
+
+## Stress Test
+
+`make test`

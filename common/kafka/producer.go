@@ -30,7 +30,6 @@ func NewAsyncProducer(ctx context.Context, id string, brokers []string) (*AsyncP
 
 	config := sarama.NewConfig()
 	config.ClientID = id
-	config.Producer.Return.Successes = true
 	config.Producer.Return.Errors = true
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 5
@@ -60,8 +59,7 @@ func NewAsyncProducer(ctx context.Context, id string, brokers []string) (*AsyncP
 				Producer: producer,
 			}
 
-			kp.wg.Add(2)
-			go kp.handleSuccess()
+			kp.wg.Add(1)
 			go kp.handleError()
 
 			logging.Logger.Info("Kafka producer created successfully", zap.String("id", id))
@@ -82,16 +80,6 @@ func (kp *AsyncProducer) Close() {
 	kp.Producer.AsyncClose()
 	kp.wg.Wait()
 	logging.Logger.Info("Kafka producer closed")
-}
-
-func (kp *AsyncProducer) handleSuccess() {
-	defer kp.wg.Done()
-	for msg := range kp.Producer.Successes() {
-		logging.Logger.Info("Message sent successfully",
-			zap.String("topic", msg.Topic),
-			zap.Int32("partition", msg.Partition),
-			zap.Int64("offset", msg.Offset))
-	}
 }
 
 func (kp *AsyncProducer) handleError() {

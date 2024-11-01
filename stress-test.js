@@ -5,29 +5,27 @@ import {
   randomString,
 } from "https://jslib.k6.io/k6-utils/1.2.0/index.js";
 
-// Log levels array
 const logLevels = ["INFO", "WARN", "ERROR", "DEBUG"];
 
-// Load test configuration
 export let options = {
-  vus: 100, // Virtual users
-  duration: "30s", // Duration of the test
+  vus: 100, 
+  duration: "30s",
 };
 
 export default function () {
-  const url = "http://localhost:8080/"; // Ingestion Service URL
+  const url = "http://localhost:8080/async";
 
   const payload = JSON.stringify({
-    timestamp: new Date().toISOString(), // Use current timestamp
-    level: logLevels[randomIntBetween(0, logLevels.length - 1)], // Random log level
-    message: randomString(30), // Random log message of 30 characters
-    userId: randomUUID(), // Simulate random user ID (UUID4 format)
+    timestamp: new Date().toISOString(),
+    level: logLevels[randomIntBetween(0, logLevels.length - 1)], 
+    message: randomString(30),
+    userId: randomUUID(),
     additionalData: {
       ipAddress: `192.168.${randomIntBetween(0, 255)}.${randomIntBetween(
         0,
         255
-      )}`, // Random IP address
-      sessionId: randomString(10), // Random session ID
+      )}`,
+      sessionId: randomString(10),
     },
   });
 
@@ -40,7 +38,6 @@ export default function () {
   });
 }
 
-// Helper function to generate a UUID4
 function randomUUID() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
     var r = (Math.random() * 16) | 0,
